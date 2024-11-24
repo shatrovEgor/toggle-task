@@ -2,70 +2,67 @@ import React, { useState, useRef, useEffect } from 'react';
 import Switch from 'react-switch';
 import './App.css';
 
+enum Toggle {
+  ThemeMode = 1,
+  MusicMode,
+  ReverseMode
+}
+
 const App: React.FC = () => {
-  const [switches, setSwitches] = useState<boolean[]>([false, false, false]);
-  const [togglesQueue, setTogglesQueue] = useState<number[]>([]);
-  const [reverseEffect, setReverseEffect] = useState<boolean>(false);
+  const [togglesQueue, setTogglesQueue] = useState<Toggle[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    if (checkReverse(switches[1])) {
+    if (checkReverse(getCheckedState(Toggle.MusicMode))) {
       audioRef.current?.play();
     } else {
       audioRef.current?.pause();
     }
   // eslint-disable-next-line
-  }, [switches[1], reverseEffect])
+  }, [togglesQueue])
 
-  useEffect(() => {
-    setReverseEffect(switches[2])
-  // eslint-disable-next-line
-  }, [switches[2]])
+  const updateSwitches = (index: Toggle): void => {
+    const updatedQueue = [...togglesQueue];
 
-  const updateSwitches = (index: number) => {
-    const newSwitches = [...switches];
-    newSwitches[index] = !newSwitches[index];
-
-    if (newSwitches.filter(Boolean).length > 2) {
-      const fistActiveToggle = togglesQueue.shift()
-      if (fistActiveToggle !== undefined) newSwitches[fistActiveToggle] = false;
-
-      setTogglesQueue([...togglesQueue, index]);
+    if (updatedQueue.find((el) => el === index)) {
+        setTogglesQueue(updatedQueue.filter((el) => el !== index))
     } else {
-      if (newSwitches[index]) {
-        setTogglesQueue([...togglesQueue, index]);
-      } else {
-        setTogglesQueue(togglesQueue.filter(i => i !== index));
+      if (togglesQueue.length === 2) {
+        updatedQueue.shift()
       }
+      setTogglesQueue([...updatedQueue, index])
     }
-
-    setSwitches(newSwitches);
   };
 
-  const checkReverse = (mode: boolean) => {
+  const checkReverse = (mode: boolean): boolean => {
+    const reverseEffect = !!togglesQueue.find((el) => el === Toggle.ReverseMode)
     return reverseEffect ? !mode : mode;
   }
 
+  const getCheckedState = (index: Toggle): boolean => {
+    return !!togglesQueue.find((el) => el === index);
+  }
+
   return (
-    <div className={`container ${checkReverse(switches[0]) ? 'dark' : 'light'}`}>
+    <div className={`container ${checkReverse(getCheckedState(Toggle.ThemeMode)) ? 'dark' : 'light'}`}>
       <div className="switch-container">
         <Switch
-          onChange={() => updateSwitches(0)}
-          checked={switches[0]}
+          onChange={() => updateSwitches(Toggle.ThemeMode)}
+          checked={getCheckedState(Toggle.ThemeMode)}
         />
         <span>Dark Mode</span>
       </div>
       <div className="switch-container">
         <Switch
-          onChange={() => updateSwitches(1)}
-          checked={switches[1]}
+          onChange={() => updateSwitches(Toggle.MusicMode)}
+          checked={getCheckedState(Toggle.MusicMode)}
         />
         <span>Play Music</span>
       </div>
       <div className="switch-container">
         <Switch
-          onChange={() => updateSwitches(2)}
-          checked={switches[2]}
+          onChange={() => updateSwitches(Toggle.ReverseMode)}
+          checked={getCheckedState(Toggle.ReverseMode)}
         />
         <span>Reverse Effect</span>
       </div>
